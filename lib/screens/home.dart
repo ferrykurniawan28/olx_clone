@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:olx/favorite.dart';
+import 'package:olx/screens/favorite.dart';
 import 'package:olx/screens/asklogin.dart';
 import 'package:olx/screens/createpost.dart';
 import 'package:olx/screens/mypost.dart';
@@ -22,9 +22,11 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  TextEditingController _search = TextEditingController();
   int _selectedIndex = 0;
   Map<String, dynamic>? data;
   String? imageUrl;
+  String? title;
   @override
   void initState() {
     super.initState();
@@ -89,6 +91,24 @@ class _HomeState extends State<Home> {
         child: Column(
           children: [
             if (_selectedIndex == 0)
+              // Container(
+              //   margin: const EdgeInsets.all(8),
+              //   child: TextField(
+              //     controller: _search,
+              //     decoration: InputDecoration(
+              //       hintText: 'Search',
+              //       prefixIcon: const Icon(Icons.search),
+              //       border: OutlineInputBorder(
+              //         borderRadius: BorderRadius.circular(10),
+              //       ),
+              //     ),
+              //     onChanged: (value) {
+              //       setState(() {
+              //         title = value;
+              //       });
+              //     },
+              //   ),
+              // ),
               const Expanded(
                 child: StreamPost(),
               ),

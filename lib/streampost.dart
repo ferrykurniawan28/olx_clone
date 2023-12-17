@@ -5,24 +5,10 @@ import 'package:olx/formatting.dart';
 import 'package:olx/model.dart';
 import 'package:olx/screens/post.dart';
 
+import 'post_list_view.dart';
+
 final db = FirebaseFirestore.instance;
 final _auth = FirebaseAuth.instance;
-
-class PostListView extends StatelessWidget {
-  final List<PostItem> posts;
-
-  const PostListView({Key? key, required this.posts}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: posts.length,
-      itemBuilder: (context, index) {
-        return PostCard(postItem: posts[index]);
-      },
-    );
-  }
-}
 
 class PostCard extends StatefulWidget {
   final PostItem postItem;
@@ -176,34 +162,52 @@ class _PostCardState extends State<PostCard> {
               const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.only(left: 10),
-                child: Text(
-                  CurrencyFormat.convertToIdr(widget.postItem.price, 0),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.attach_money),
+                    const SizedBox(width: 6),
+                    Text(
+                      CurrencyFormat.convertToIdr(widget.postItem.price, 0),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.only(left: 10),
-                child: Text(
-                  widget.postItem.address,
-                  style: const TextStyle(
-                    fontSize: 16,
-                  ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.location_on),
+                    const SizedBox(width: 6),
+                    Text(
+                      widget.postItem.address,
+                      style: const TextStyle(
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.only(left: 10),
-                child: Text(
-                  CustomDateFormat.convertToDateTime(
-                    widget.postItem.posteddate,
-                  ),
-                  style: const TextStyle(
-                    fontSize: 16,
-                  ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.date_range),
+                    const SizedBox(width: 6),
+                    Text(
+                      CustomDateFormat.convertToDateTime(
+                        widget.postItem.posteddate,
+                      ),
+                      style: const TextStyle(
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -222,46 +226,105 @@ class StreamPost extends StatefulWidget {
 }
 
 class _StreamPostState extends State<StreamPost> {
+  TextEditingController _searchController = TextEditingController();
+  List<PostItem> _allPosts = [];
+  List<PostItem> _filteredPosts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  _onSearchChanged() {
+    // Delay the execution of searchResultList by a short duration
+    Future.delayed(Duration(milliseconds: 300), () {
+      searchResultList();
+    });
+  }
+
+  searchResultList() {
+    var searchText = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredPosts = _allPosts
+          .where((post) =>
+              post.title.toLowerCase().contains(searchText) ||
+              post.description.toLowerCase().contains(searchText))
+          .toList();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: db.collection('posts').snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        }
+    return Column(
+      children: [
+        Container(
+          margin: const EdgeInsets.all(8),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: db.collection('posts').snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
 
-        if (snapshot.hasError) {
-          return Center(
-            child: Text('Error: ${snapshot.error}'),
-          );
-        }
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text('Error: ${snapshot.error}'),
+                );
+              }
 
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(
-            child: Text('No posts available.'),
-          );
-        }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return const Center(
+                  child: Text('No posts available.'),
+                );
+              }
 
-        List<PostItem> posts = snapshot.data!.docs.map((doc) {
-          return PostItem(
-            username: doc['username'],
-            email: doc['email'],
-            title: doc['title'],
-            price: doc['price'],
-            posteddate: (doc['posteddate'] as Timestamp).toDate(),
-            description: doc['description'],
-            address: doc['address'],
-            phoneNumber: doc['phoneNumber'],
-            imageUrl: List<String>.from(doc['imageUrl']),
-            postId: doc['postID'],
-          );
-        }).toList();
+              _allPosts = snapshot.data!.docs.map<PostItem>((doc) {
+                return PostItem(
+                  username: doc['username'],
+                  email: doc['email'],
+                  title: doc['title'],
+                  price: doc['price'],
+                  posteddate: (doc['posteddate'] as Timestamp).toDate(),
+                  description: doc['description'],
+                  address: doc['address'],
+                  phoneNumber: doc['phoneNumber'],
+                  imageUrl: List<String>.from(doc['imageUrl']),
+                  postId: doc['postID'],
+                );
+              }).toList();
 
-        return PostListView(posts: posts);
-      },
+              if (_filteredPosts.isEmpty) {
+                // Show all posts if no search is performed
+                _filteredPosts = List.from(_allPosts);
+              }
+
+              return PostListView(posts: _filteredPosts);
+            },
+          ),
+        ),
+      ],
     );
   }
 }

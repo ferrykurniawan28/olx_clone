@@ -100,27 +100,51 @@ class StreamMyPost extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Text(
-                        CurrencyFormat.convertToIdr(posts[index].price, 0),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        children: [
+                          const Icon(Icons.attach_money),
+                          const SizedBox(
+                            width: 6,
+                          ),
+                          Text(
+                            CurrencyFormat.convertToIdr(posts[index].price, 0),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 10),
-                      Text(
-                        posts[index].address,
-                        style: const TextStyle(
-                          fontSize: 16,
-                        ),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on),
+                          const SizedBox(
+                            width: 6,
+                          ),
+                          Text(
+                            posts[index].address,
+                            style: const TextStyle(
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 10),
-                      Text(
-                        CustomDateFormat.convertToDateTime(
-                            posts[index].posteddate),
-                        style: const TextStyle(
-                          fontSize: 16,
-                        ),
+                      Row(
+                        children: [
+                          const Icon(Icons.date_range),
+                          const SizedBox(
+                            width: 6,
+                          ),
+                          Text(
+                            CustomDateFormat.convertToDateTime(
+                                posts[index].posteddate),
+                            style: const TextStyle(
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

@@ -69,6 +69,11 @@ class _StreamFavoritePostState extends State<StreamFavoritePost> {
 
   @override
   Widget build(BuildContext context) {
+    if (watchlistPosts.isEmpty) {
+      return const Center(
+        child: Text('No posts available.'),
+      );
+    }
     return ListView.builder(
       itemCount: watchlistPosts.length,
       itemBuilder: (context, index) {
@@ -120,34 +125,58 @@ class _StreamFavoritePostState extends State<StreamFavoritePost> {
                   const SizedBox(height: 10),
                   Padding(
                     padding: const EdgeInsets.only(left: 10),
-                    child: Text(
-                      CurrencyFormat.convertToIdr(
-                          watchlistPosts[index].price, 0),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.attach_money),
+                        const SizedBox(
+                          width: 6,
+                        ),
+                        Text(
+                          CurrencyFormat.convertToIdr(
+                              watchlistPosts[index].price, 0),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 10),
                   Padding(
                     padding: const EdgeInsets.only(left: 10),
-                    child: Text(
-                      watchlistPosts[index].address,
-                      style: const TextStyle(
-                        fontSize: 16,
-                      ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.location_on),
+                        const SizedBox(
+                          width: 6,
+                        ),
+                        Text(
+                          watchlistPosts[index].address,
+                          style: const TextStyle(
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 10),
                   Padding(
                     padding: const EdgeInsets.only(left: 10),
-                    child: Text(
-                      CustomDateFormat.convertToDateTime(
-                          watchlistPosts[index].posteddate),
-                      style: const TextStyle(
-                        fontSize: 16,
-                      ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.date_range),
+                        const SizedBox(
+                          width: 6,
+                        ),
+                        Text(
+                          CustomDateFormat.convertToDateTime(
+                              watchlistPosts[index].posteddate),
+                          style: const TextStyle(
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
