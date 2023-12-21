@@ -5,8 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:olx/Firebase_data.dart';
-import 'package:olx/model.dart';
+import 'package:olx/utils/Firebase_data.dart';
+import 'package:olx/utils/model.dart';
+import 'package:olx/screens/full_screen_image_page_view.dart';
 import 'package:olx/screens/home.dart';
 import 'package:uuid/uuid.dart';
 
@@ -23,15 +24,16 @@ class CreatePost extends StatefulWidget {
 class _CreatePostState extends State<CreatePost> {
   String userId = _auth.currentUser!.uid;
   List<String> images = [];
-  List<String?> localImagePaths = List.generate(1, (index) => null);
+  // List<String?> localImagePaths = List.generate(1, (index) => null);
   File? _pickedImagefile;
   String? _username;
+  String? _loc;
   final _formKey = GlobalKey<FormState>();
   final _title = TextEditingController();
   final _description = TextEditingController();
   final _price = TextEditingController();
-  final _location = TextEditingController();
-  final _contact = TextEditingController();
+  TextEditingController _location = TextEditingController();
+  TextEditingController _contact = TextEditingController();
   int idx = 1;
   int max = 5;
   List<String> items = List.generate(1, (index) => 'Item $index');
@@ -44,7 +46,16 @@ class _CreatePostState extends State<CreatePost> {
       final data = doc.data() as Map<String, dynamic>;
       setState(() {
         _username = data['username'];
+        // _loc = data['address'];
+        _location = TextEditingController(
+          text: data['address'],
+        );
+        final int phone = data['phoneNumber'];
+        _contact = TextEditingController(
+          text: phone.toString(),
+        );
       });
+      print(data);
     });
     super.initState();
   }
@@ -59,22 +70,8 @@ class _CreatePostState extends State<CreatePost> {
     List<String> imageUrlList = [];
 
     try {
-      for (int i = 0; i < localImagePaths.length; i++) {
-        if (localImagePaths[i] != null) {
-          final storageRef = FirebaseStorage.instance
-              .ref()
-              .child('post_images')
-              .child('${_auth.currentUser!.uid}')
-              .child('${_auth.currentUser!.uid}${DateTime.now()}_$i.jpg');
-
-          await storageRef.putFile(File(localImagePaths[i]!));
-          final imageUrl = await storageRef.getDownloadURL();
-          imageUrlList.add(imageUrl);
-        }
-      }
-
       final int price = int.parse(_price.text);
-      Uuid uuid = Uuid();
+      Uuid uuid = const Uuid();
       String postId = uuid.v4();
       final post = PostItem(
         postId: postId,
@@ -86,7 +83,7 @@ class _CreatePostState extends State<CreatePost> {
         description: _description.text,
         address: _location.text,
         phoneNumber: _contact.text,
-        imageUrl: imageUrlList,
+        imageUrl: images,
       );
 
       DatabaseFirestore().addPostItem(
@@ -101,7 +98,7 @@ class _CreatePostState extends State<CreatePost> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height,
       child: SingleChildScrollView(
         child: Align(
@@ -138,91 +135,168 @@ class _CreatePostState extends State<CreatePost> {
                           width: 250,
                           height: 250,
                           decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
+                              // borderRadius: BorderRadius.circular(10),
                               border: Border.all(color: Colors.grey)),
-                          child: ListTile(
-                            title: Center(
-                              child: (index == items.length - 1)
-                                  ? const Icon(Icons.add_a_photo)
-                                  : (localImagePaths[index] != null)
-                                      ? Image.file(
-                                          File(localImagePaths[index]!),
-                                          fit: BoxFit.cover,
-                                        )
-                                      : const SizedBox(),
-                            ),
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Choose Image'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      child: const Text('Cancel'),
-                                    ),
-                                  ],
-                                  content: Column(
-                                    mainAxisSize: MainAxisSize.min,
+                          child: GestureDetector(
+                            child: (index == items.length - 1)
+                                ? const Center(child: Icon(Icons.add_a_photo))
+                                : Stack(
+                                    alignment: Alignment.topRight,
                                     children: [
-                                      ListTile(
-                                        leading: const Icon(Icons.camera),
-                                        title: const Text('Camera'),
-                                        onTap: () async {
-                                          final pickImage =
-                                              await ImagePicker().pickImage(
-                                            source: ImageSource.camera,
-                                          );
-                                          if (pickImage != null) {
-                                            setState(() {
-                                              _pickedImagefile =
-                                                  File(pickImage.path);
-                                              localImagePaths[index] =
-                                                  pickImage.path;
-                                            });
-                                          }
-                                          Navigator.pop(context);
-                                          if (index == items.length - 1 &&
-                                              items.length <= max) {
-                                            setState(() {
-                                              items.add('Item $idx');
-                                              idx++;
-                                            });
-                                          }
-                                        },
+                                      Container(
+                                        width: 250,
+                                        height: 250,
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          // border: Border.all(color: Colors.grey),
+                                        ),
+                                        child: Image.network(
+                                          images[index],
+                                          fit: BoxFit.cover,
+                                        ),
                                       ),
-                                      ListTile(
-                                        leading: const Icon(Icons.image),
-                                        title: const Text('Gallery'),
-                                        onTap: () async {
-                                          final pickImage =
-                                              await ImagePicker().pickImage(
-                                            source: ImageSource.gallery,
-                                          );
-                                          if (pickImage != null) {
-                                            setState(() {
-                                              _pickedImagefile =
-                                                  File(pickImage.path);
-                                              localImagePaths[index] =
-                                                  pickImage.path;
-                                            });
-                                          }
-                                          Navigator.pop(context);
-                                          if (index == items.length - 1 &&
-                                              items.length <= max) {
-                                            setState(() {
-                                              items.add('Item $idx');
-                                              idx++;
-                                            });
-                                          }
+                                      IconButton(
+                                        onPressed: () async {
+                                          setState(() {
+                                            images.removeAt(index);
+                                            items.removeAt(index);
+                                            idx--;
+                                          });
+                                          // await images[index]
                                         },
+                                        icon: const Icon(Icons.close),
                                       ),
                                     ],
                                   ),
-                                ),
-                              );
+                            onTap: () {
+                              if (index == items.length - 1) {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Choose Image'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: const Text('Cancel'),
+                                      ),
+                                    ],
+                                    content: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        ListTile(
+                                          leading: const Icon(Icons.camera),
+                                          title: const Text('Camera'),
+                                          onTap: () async {
+                                            final pickImage =
+                                                await ImagePicker().pickImage(
+                                              source: ImageSource.camera,
+                                            );
+                                            if (pickImage == null) {
+                                              return;
+                                            }
+                                            if (pickImage != null) {
+                                              setState(() {
+                                                _pickedImagefile =
+                                                    File(pickImage.path);
+                                              });
+                                            }
+                                            final storageRef = FirebaseStorage
+                                                .instance
+                                                .ref()
+                                                .child('post_images')
+                                                .child(
+                                                    '${_auth.currentUser!.uid}')
+                                                .child(
+                                                    '${_auth.currentUser!.uid}${DateTime.now()}_.jpg');
+
+                                            await storageRef
+                                                .putFile(_pickedImagefile!);
+                                            final imageUrl = await storageRef
+                                                .getDownloadURL();
+                                            images.add(imageUrl);
+                                            if (pickImage != null) {
+                                              setState(() {
+                                                _pickedImagefile =
+                                                    File(pickImage.path);
+                                              });
+                                            }
+
+                                            Navigator.pop(context);
+                                            if (index == items.length - 1 &&
+                                                items.length <= max) {
+                                              setState(() {
+                                                items.add('Item $idx');
+                                                idx++;
+                                              });
+                                            }
+                                          },
+                                        ),
+                                        ListTile(
+                                          leading: const Icon(Icons.image),
+                                          title: const Text('Gallery'),
+                                          onTap: () async {
+                                            final pickImage =
+                                                await ImagePicker().pickImage(
+                                              source: ImageSource.gallery,
+                                            );
+                                            if (pickImage == null) {
+                                              return;
+                                            }
+                                            if (pickImage != null) {
+                                              setState(() {
+                                                _pickedImagefile =
+                                                    File(pickImage.path);
+                                              });
+                                            }
+                                            final storageRef = FirebaseStorage
+                                                .instance
+                                                .ref()
+                                                .child('post_images')
+                                                .child(
+                                                    '${_auth.currentUser!.uid}')
+                                                .child(
+                                                    '${_auth.currentUser!.uid}${DateTime.now()}_.jpg');
+
+                                            await storageRef
+                                                .putFile(_pickedImagefile!);
+                                            final imageUrl = await storageRef
+                                                .getDownloadURL();
+                                            images.add(imageUrl);
+                                            if (pickImage != null) {
+                                              setState(() {
+                                                _pickedImagefile =
+                                                    File(pickImage.path);
+                                              });
+                                            }
+                                            Navigator.pop(context);
+                                            if (index == items.length - 1 &&
+                                                items.length <= max) {
+                                              setState(() {
+                                                items.add('Item $idx');
+                                                idx++;
+                                              });
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        FullScreenImagePageView(
+                                      imageUrls: images,
+                                      initialIndex: index,
+                                    ),
+                                  ),
+                                );
+                              }
                             },
                           ),
                         ),
@@ -234,6 +308,7 @@ class _CreatePostState extends State<CreatePost> {
                   margin: const EdgeInsets.all(20),
                   child: TextFormField(
                     controller: _title,
+                    maxLength: 20,
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter title';
@@ -248,12 +323,12 @@ class _CreatePostState extends State<CreatePost> {
                 ),
                 Container(
                   margin: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.grey,
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                  // decoration: BoxDecoration(
+                  //   border: Border.all(
+                  //     color: Colors.grey,
+                  //   ),
+                  //   borderRadius: BorderRadius.circular(10),
+                  // ),
                   child: IntrinsicHeight(
                     child: TextFormField(
                       controller: _description,
@@ -268,7 +343,11 @@ class _CreatePostState extends State<CreatePost> {
                       expands: true,
                       decoration: const InputDecoration(
                         labelText: 'Description',
-                        border: InputBorder.none,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(30),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -286,8 +365,14 @@ class _CreatePostState extends State<CreatePost> {
                       return null;
                     },
                     decoration: const InputDecoration(
+                      icon: Icon(Icons.monetization_on_outlined),
+                      prefix: Text('RP '),
                       labelText: 'Price',
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(30),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -295,6 +380,7 @@ class _CreatePostState extends State<CreatePost> {
                   margin: const EdgeInsets.all(20),
                   child: TextFormField(
                     controller: _location,
+                    // initialValue: _loc,
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter location';
@@ -302,8 +388,13 @@ class _CreatePostState extends State<CreatePost> {
                       return null;
                     },
                     decoration: const InputDecoration(
+                      icon: Icon(Icons.location_on),
                       labelText: 'Location',
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(30),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -319,16 +410,33 @@ class _CreatePostState extends State<CreatePost> {
                       return null;
                     },
                     decoration: const InputDecoration(
+                      icon: Icon(Icons.phone),
                       labelText: 'Contact',
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(30),
+                        ),
+                      ),
                     ),
                   ),
                 ),
                 Container(
                   margin: const EdgeInsets.all(20),
-                  child: ElevatedButton(
-                    onPressed: _submit,
-                    child: const Text('Submit'),
+                  child: GestureDetector(
+                    onTap: _submit,
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      width: double.infinity,
+                      color: Colors.black87,
+                      child: const Center(
+                        child: Text(
+                          'Upload',
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],

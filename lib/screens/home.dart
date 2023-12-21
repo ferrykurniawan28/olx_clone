@@ -6,7 +6,7 @@ import 'package:olx/screens/favorite.dart';
 import 'package:olx/screens/asklogin.dart';
 import 'package:olx/screens/createpost.dart';
 import 'package:olx/screens/mypost.dart';
-import 'package:olx/streampost.dart';
+import 'package:olx/screens/streampost.dart';
 
 final db = FirebaseFirestore.instance;
 final _auth = FirebaseAuth.instance;

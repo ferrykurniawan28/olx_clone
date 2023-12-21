@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:olx/Firebase_data.dart';
+import 'package:olx/utils/Firebase_data.dart';
 
 final _auth = FirebaseAuth.instance;
 

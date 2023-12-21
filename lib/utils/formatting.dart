@@ -17,4 +17,8 @@ class CustomDateFormat {
   static String convertToDateTime(DateTime date) {
     return formatter.format(date);
   }
+
+  static String convertToMonthYear(DateTime date) {
+    return DateFormat.yMMMM().format(date);
+  }
 }

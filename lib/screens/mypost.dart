@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:olx/formatting.dart';
-import 'package:olx/model.dart';
+import 'package:olx/utils/formatting.dart';
+import 'package:olx/utils/model.dart';
 import 'package:olx/screens/asklogin.dart';
 import 'package:olx/screens/post.dart';
 
@@ -10,6 +10,20 @@ final db = FirebaseFirestore.instance;
 
 class StreamMyPost extends StatelessWidget {
   const StreamMyPost({super.key});
+
+  Future<void> _deletePost(String postId) async {
+    try {
+      QuerySnapshot snapshot =
+          await db.collection('posts').where('postID', isEqualTo: postId).get();
+
+      for (QueryDocumentSnapshot doc in snapshot.docs) {
+        await doc.reference.delete();
+      }
+    } catch (e) {
+      print('Error deleting post: $e');
+      throw e;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,12 +106,27 @@ class StreamMyPost extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Text(
-                        posts[index].title,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            posts[index].title,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () async {
+                              try {
+                                await _deletePost(posts[index].postId);
+                              } catch (e) {
+                                print('Error deleting post: $e');
+                              }
+                            },
+                            icon: const Icon(Icons.delete_forever),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 10),
                       Row(

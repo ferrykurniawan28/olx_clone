@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:olx/utils/Firebase_data.dart';
+import 'package:olx/utils/formatting.dart';
 
 final db = FirebaseFirestore.instance;
 final _auth = FirebaseAuth.instance;
@@ -18,12 +20,21 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
+  TextEditingController? controllerAddress;
+  TextEditingController? controllerUsername;
+  TextEditingController? controllerPhone;
   Map<String, dynamic>? data;
   String? username;
   String? email;
   File? _pickedImagefile;
   String? imageUrl;
+  DateTime? memberSince;
+  String? since;
+  String? address;
+  String? userName;
+  int? phone;
   bool isUpload = false;
+  int idx = 0;
 
   void showPhotoOption(context) {
     showDialog(
@@ -128,9 +139,36 @@ class _ProfileState extends State<Profile> {
   }
 
   @override
+  void dispose() {
+    controllerAddress?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        actions: [
+          if (idx == 0)
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  idx = 1;
+                });
+              },
+              icon: const Icon(Icons.edit),
+            ),
+          if (idx == 1)
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  idx = 0;
+                });
+              },
+              icon: const Icon(Icons.close),
+            ),
+        ],
+      ),
       body: FutureBuilder<DocumentSnapshot>(
         future: db.collection('users').doc(_auth.currentUser!.uid).get(),
         builder: (context, snapshot) {
@@ -150,6 +188,15 @@ class _ProfileState extends State<Profile> {
             username = data!['username'];
             email = data!['email'];
             imageUrl = data!['image'];
+            memberSince = data!['userSince'] ?? DateTime(2021);
+            userName = data!['username'];
+            phone = data?['phoneNumber'];
+            since = CustomDateFormat.convertToMonthYear(memberSince!);
+            address = data?['address'];
+            controllerAddress = TextEditingController(text: address);
+            controllerUsername = TextEditingController(text: userName);
+            controllerPhone = TextEditingController(
+                text: (phone != null) ? phone.toString() : null);
 
             return Center(
               child: Column(
@@ -174,38 +221,229 @@ class _ProfileState extends State<Profile> {
                             ),
                           ),
                         const SizedBox(width: 20),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              username!,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              email!,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (idx == 1)
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: controllerUsername,
+                                        decoration: const InputDecoration(
+                                          labelText: 'Username',
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.all(
+                                              Radius.circular(30),
+                                            ),
+                                          ),
+                                        ),
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please enter valid username';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                    TextButton(
+                                        onPressed: () {
+                                          if (userName == null) {
+                                            return;
+                                          }
+                                          DatabaseFirestore().uploadUsername(
+                                              controllerUsername!.text);
+                                          setState(() {
+                                            idx = 0;
+                                          });
+                                        },
+                                        child: const Text('Update')),
+                                  ],
+                                ),
+                              if (idx == 0)
+                                Text(
+                                  username!,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              if (idx == 0)
+                                Text(
+                                  email!,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: [
+                        const SizedBox(
+                          width: 8,
+                        ),
+                        const Icon(Icons.calendar_today),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Member Since: $since',
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: [
+                        const SizedBox(
+                          width: 8,
+                        ),
+                        const Icon(Icons.location_on_rounded),
+                        const SizedBox(
+                          width: 6,
+                        ),
+                        if (idx == 1)
+                          Expanded(
+                            child: TextFormField(
+                              // initialValue: (address != null) ? address : null,
+                              controller: controllerAddress,
+                              decoration: const InputDecoration(
+                                labelText: 'Address',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(30),
+                                  ),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter valid address';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        if (idx == 1)
+                          TextButton(
+                            onPressed: () {
+                              if (controllerAddress!.text == null) {
+                                return;
+                              }
+                              DatabaseFirestore()
+                                  .uploadAddress(controllerAddress!.text);
+                              setState(() {
+                                idx = 0;
+                              });
+                            },
+                            child: const Text('Add'),
+                          ),
+                        if (address == null && idx == 0)
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                idx = 1;
+                              });
+                            },
+                            child: const Text('Add Address'),
+                          ),
+                        if (address != null && idx == 0) Text(address!),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 8),
+                        const Icon(Icons.phone),
+                        const SizedBox(width: 6),
+                        if (idx == 0 && phone == null)
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                idx = 1;
+                              });
+                            },
+                            child: const Text('Add Phone'),
+                          ),
+                        if (idx == 1)
+                          Expanded(
+                            child: TextFormField(
+                              controller: controllerPhone,
+                              keyboardType: TextInputType.phone,
+                              decoration: const InputDecoration(
+                                labelText: 'Phone Number',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(30),
+                                  ),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter valid phone number';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        if (idx == 1)
+                          TextButton(
+                            onPressed: () {
+                              if (controllerPhone == null) {
+                                return;
+                              }
+                              DatabaseFirestore().uploadPhone(
+                                  int.parse(controllerPhone!.text));
+                              setState(() {
+                                idx = 0;
+                              });
+                            },
+                            child: const Text('Add'),
+                          ),
+                        if (idx == 0 && phone != null)
+                          Text(
+                            phone.toString(),
+                          ),
+                      ],
+                    ),
+                  ),
                   Container(
                     alignment: Alignment.bottomCenter,
-                    child: TextButton(
-                      onPressed: () {
+                    child: GestureDetector(
+                      onTap: () {
                         FirebaseAuth.instance.signOut();
                         widget.onLoginStatusChanged(false);
                         Navigator.of(context).pushNamed('/login');
                       },
-                      child: const Text('Logout'),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                          width: double.infinity,
+                          height: 50,
+                          decoration: const BoxDecoration(
+                            color: Colors.black87,
+                            // borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'Logout',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ],

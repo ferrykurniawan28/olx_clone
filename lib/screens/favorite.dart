@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:olx/Firebase_data.dart';
-import 'package:olx/formatting.dart';
-import 'package:olx/model.dart';
+import 'package:olx/utils/Firebase_data.dart';
+import 'package:olx/utils/formatting.dart';
+import 'package:olx/utils/model.dart';
 import 'package:olx/screens/post.dart';
 // import 'package:olx/screens/post.dart';
 

@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:olx/screens/createpost.dart';
 import 'package:olx/screens/home.dart';
 import 'package:olx/screens/login.dart';
@@ -8,6 +9,7 @@ import 'package:olx/screens/profil.dart';
 import 'firebase_options.dart';
 
 final _auth = FirebaseAuth.instance;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -47,6 +49,10 @@ class _MainAppState extends State<MainApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       // initialRoute: '/login',
+      title: "Bishop",
+      theme: ThemeData(
+        textTheme: GoogleFonts.latoTextTheme(),
+      ),
       home: StreamBuilder(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
